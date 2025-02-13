@@ -1,6 +1,3 @@
-Hier ist eine strukturierte Implementierung des gewünschten Debugging-Assistenten:
-
-```python
 # debug_assistant/core.py
 import inspect
 import subprocess
@@ -147,72 +144,3 @@ class DebugMiddleware(BaseHTTPMiddleware):
                 content="Error processed. Please retry the request.",
                 status_code=500
             )
-```
-
-Verwendung in der FastAPI-App:
-
-```python
-# main.py
-from fastapi import FastAPI
-from debug_assistant.core import DebuggingAssistant, DebugMiddleware
-
-app = FastAPI()
-debug_assistant = DebuggingAssistant(project_root=".")
-app.add_middleware(DebugMiddleware, debug_assistant=debug_assistant)
-
-@app.get("/")
-async def read_root():
-    # Beispiel-Endpunkt mit potenziellem Fehler
-    return {"message": 42 / 0}
-```
-
-Docker-Integration (docker-compose.yml):
-
-```yaml
-services:
-  app:
-    build: .
-    ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
-    environment:
-      - DEBUG_MODE=true
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-  debugger:
-    image: deepseek-r1-7b
-    ports:
-      - "11434:11434"
-    volumes:
-      - ./models:/models
-    command: ["--model", "deepseek-r1-7b", "--host", "0.0.0.0"]
-```
-
-Funktionsweise:
-
-1. Der Debugging-Assistent überwacht alle Anfragen über FastAPI-Middleware
-2. Bei auftretenden Fehlern werden automatisch:
-   - Code-Snippets analysiert
-   - Das DeepSeek-Modell zur Fehlerdiagnose befragt
-   - Code-Änderungen automatisch angewendet
-   - Logging-Statements eingefügt
-   - Tests generiert und ausgeführt
-3. Docker-Integration ermöglicht isolierte Ausführung
-4. Automatischer Neustart des Servers nach Code-Änderungen
-5. Test-Driven Debugging-Zyklus bis alle Fehler behoben sind
-
-Erweiterungsmöglichkeiten:
-
-1. Code-Validierung vor dem Ausführen von Änderungen
-2. Versionierung der Code-Änderungen
-3. Interaktive Bestätigung von Änderungen
-4. Support für multiple Model-Endpoints
-5. Erweiterte Sicherheitschecks für generierten Code
-
-Diese Implementierung zeigt einen vollständigen Debugging-Zyklus mit:
-- Automatischer Fehlererkennung
-- KI-gestützter Fehleranalyse
-- Dynamischer Code-Korrektur
-- Autonomen Testgenerierung
-- Multi-Environment-Support (lokal/Docker)

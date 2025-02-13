@@ -1,0 +1,50 @@
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED 1
+ENV PIP_NO_CACHE_DIR=1
+ENV HF_HOME="/appuser/.cache/huggingface"
+
+# System dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+USER root
+# Create directory structure and set permissions
+RUN mkdir -p /appuser/app && \
+    mkdir -p /appuser/.cache/huggingface/hub && \
+    python3 -m venv /appuser/venv && \
+    chmod -R 777 /appuser/venv && \
+    chmod -R 777 /appuser/.cache && \
+    chown -R 1000:1000 /appuser/venv && \
+    chown -R 1000:1000 /appuser && \
+    chown -R 1000:1000 /appuser/.cache
+
+WORKDIR /appuser/app
+
+# Copy requirements with correct ownership
+COPY --chown=1000:1000 requirements-deepseek.txt /appuser/app/
+
+# Switch to non-root user
+USER 1000:1000
+
+# Set up Python environment
+ENV PATH="/appuser/venv/bin:$PATH"
+
+# Update pip first
+RUN /appuser/venv/bin/pip install --upgrade pip
+
+# Install requirements
+RUN /appuser/venv/bin/pip install --no-cache-dir -r requirements-deepseek.txt
+
+# Copy application code with correct ownership
+COPY --chown=1000:1000 app /appuser/app/app/
+
+# Set environment variables
+ENV MODEL_ID="deepseek-ai/deepseek-llm-7b-chat"
+ENV DEVICE="cpu"
+ENV MAX_LENGTH=2048
+
+# Run the API server
+CMD ["uvicorn", "app.services.deepseek_service:app", "--host", "0.0.0.0", "--port", "8000"]
