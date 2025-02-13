@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG_MODE=true
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  debugger:
+    # image: deepseek-r1-7b
+    build:
+      context: ./debugger
+      dockerfile: Dockerfile.deepseek
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./models:/models
+    command: ["--model", "deepseek-r1-7b", "--host", "0.0.0.0"]
